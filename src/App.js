@@ -4,23 +4,25 @@ import { useState } from "react";
 
 function App() {
   
-  const [forms, setForms] = useState([{index: 0, element: <BigForm key={0} index={0}/>}]);
+  const [forms, setForms] = useState([0]);
   const [keyCounter, setKeyCounter] = useState(1);
   
   const deleteForm = (index) => {
     // const newForms = forms.filter((form) => form.index !== index);
     // setForms(newForms);
-    console.log(forms.length)
+    console.log(index);
+    setForms(forms.filter((form) => form !== index));
+    
   }
   
   const addForm = () => {
     setKeyCounter((prev) => (prev + 1))
     const newKey = keyCounter;
-    setForms([...forms, {index: newKey, element: <BigForm key={newKey} index={newKey} delete={deleteForm}/>}]);
+    setForms([...forms, newKey]);
   }
 
   const clearForms = () => {
-    setForms([{index: 0, element: <BigForm key={0} index={0}/>}]);
+    setForms([0]);
     setKeyCounter(1);
   }
 
@@ -47,7 +49,7 @@ function App() {
       </header>
       <main className="container mx-auto py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {forms.map((form) => form.element)}
+          {forms.map((form) => <BigForm key={form} index={form} delete={deleteForm}/>)}
         </div>
       </main>
     </div>
@@ -91,7 +93,7 @@ function BigForm(props) {
         <label for="default-checkbox" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Repeated</label>
       </div>
       <div className="mt-4 flex justify-center items-center">
-      {props.index === 0 ? null : <button onClick={props.delete(props.index)} className= "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">Delete</button>} 
+      {props.index === 0 ? null : <button onClick={() => props.delete(props.index)} className= "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">Delete</button>} 
       </div>
     </div>
   );

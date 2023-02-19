@@ -1,16 +1,14 @@
 import "./App.css";
-import {useState, useEffect} from "react";
+import { useState, useEffect, useRef } from "react";
 import BigForm from "./BigForm.js";
-
-
 
 function App() {
   const [forms, setForms] = useState([0]);
   const [keyCounter, setKeyCounter] = useState(1);
   const [totalCredits, setTotalCredits] = useState(0);
   const [totalCreditsByWeight, setTotalCreditsByWeight] = useState(0);
-
   const [formValues, setFormValues] = useState({});
+  const prevFormValues = useRef({});
 
   const onBigFormChange = (index, credits, grade, repeated) => {
     const newValues = {
@@ -26,37 +24,54 @@ function App() {
     delete formValues[index];
     setFormValues(formValues);
   };
-
+  const clearForms = () => {
+    // Erase all forms and reset state
+    // then add a new empty form
+    setForms([]);
+    setKeyCounter(0);
+    setTotalCredits(0);
+    setTotalCreditsByWeight(0);
+    setFormValues({});
+  };
+  
   useEffect(() => {
+    if (prevFormValues.current === formValues) {
+      return; // skip update
+    }
+
+    if (forms.length === 0) {
+      setForms([0]);
+      setKeyCounter(1)
+    }
+
     const tempCredits = Object.values(formValues).reduce(
       (a, b) => parseInt(a) + parseInt(b.credits),
       0
     );
     setTotalCredits(tempCredits);
+
     const tempCreditsByWeight = Object.values(formValues).reduce(
-      (a, b) => parseInt(a) + parseInt(b.credits) * parseFloat(b.grade),
+      (a, b) => {
+        if (parseInt(b.credits) === 0) {
+          return parseFloat(a);
+        }
+        return parseFloat(a) + parseInt(b.credits) * parseFloat(b.grade);
+      },
       0
     );
-    console.log(formValues);
     setTotalCreditsByWeight(tempCreditsByWeight);
-    // console.log(tempCreditsByWeight);
-  }, [formValues, forms]);
+
+    prevFormValues.current = formValues;
+  }, [formValues, forms, prevFormValues]);
 
   const addForm = () => {
     setKeyCounter((prev) => prev + 1);
     const newKey = keyCounter;
     setForms([...forms, newKey]);
-    
   };
 
-  const clearForms = () => {
-    setForms([0]);
-    setKeyCounter(1);
-    setTotalCredits(0);
-    setTotalCreditsByWeight(0);
-    setFormValues({});
-  };
 
+  
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-indigo-600 text-white">

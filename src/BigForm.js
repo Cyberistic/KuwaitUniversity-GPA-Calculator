@@ -1,8 +1,8 @@
-import {useState, useEffect} from "react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+import { useState, useEffect } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 
-
+// This object maps letter grades to their corresponding GPAs
 const grades = {
     A: 4,
     "A-": 3.67,
@@ -14,25 +14,27 @@ const grades = {
     "C-": 1.67,
     "D+": 1.33,
     D: 1,
-    F: 0
+    F: 0,
 };
 
-
-
+// This component represents a form for entering class information
 export default function BigForm(props) {
+    // Define three pieces of state: credits, whether the class is repeated, and the selected grade
     const [credits, setCredits] = useState(0);
     const [repeated, setRepeated] = useState(false);
     const [grade, setGrade] = useState(4);
 
+    // This function handles changes to the credits input field
     const onCreditsChange = (credits) => {
-
+        // Ensure that credits is an integer or an empty string
         if (Number.isInteger(parseInt(credits)) || credits === "") {
+            // Clamp credits between 0 and 9
             if (credits > 9) {
                 setCredits(9);
             } else if (credits < 0) {
                 setCredits(0);
             } else {
-                // check if float
+                // If credits is a float, round down to the nearest integer
                 if (credits % 1 !== 0) {
                     setCredits(Math.floor(credits));
                 } else {
@@ -42,14 +44,18 @@ export default function BigForm(props) {
         }
     };
 
+    // This effect runs every time credits, grade, or repeated changes, and updates the parent component's state
     useEffect(() => {
         props.onBigFormChange(props.index, credits, grade, repeated);
-    }, [credits, grade, props, repeated]);
+    }, [credits, grade, repeated]);
 
+    // Render the form
     return (
         <div className="bg-white p-4 rounded shadow-md relative">
             <div className="w-5/6">
-                <h2 className="text-xl font-medium mb-4" contenteditable="true">Class {props.index + 1}</h2>
+                <h2 className="text-xl font-medium mb-4" contenteditable="true">
+                    Class {props.index + 1}
+                </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -72,15 +78,18 @@ export default function BigForm(props) {
                         value={grade}
                         onChange={(e) => setGrade(e.target.value)}
                     >
+                        {/* Map over the grades object and create an option for each key/value pair */}
                         {Object.keys(grades).map((key) => (
-                            <option value={grades[key]}>{key}</option>
+                            <option key={key} value={grades[key]}>
+                                {key}
+                            </option>
                         ))}
                     </select>
                 </div>
             </div>
             <div className="mt-3 flex justify-center items-center ">
                 <input
-                    onChange={(e) => setRepeated(e.target.value)}
+                    onChange={(e) => setRepeated(e.target.checked)}
                     id="default-checkbox"
                     type="checkbox"
                     value={repeated}
@@ -93,10 +102,10 @@ export default function BigForm(props) {
             <div className="absolute top-0 right-0 mt-3 px-2">
                 {props.index === 0 ? null : (
                     <button
-                    onClick={() => props.delete(props.index)}
-                    className="hover:bg-gray-200 py-2 px-2.5 rounded-full"
+                        onClick={() => props.delete(props.index)}
+                        className="hover:bg-gray-200 py-2 px-2.5 rounded-full"
                     >
-                    <FontAwesomeIcon icon={faTrashAlt} />
+                        <FontAwesomeIcon icon={faTrashAlt} />
                     </button>
                 )}
             </div>

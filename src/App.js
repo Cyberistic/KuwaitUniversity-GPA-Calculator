@@ -9,23 +9,24 @@ function App() {
   const [totalCredits, setTotalCredits] = useState(0);
   const [totalCreditsByWeight, setTotalCreditsByWeight] = useState(0);
   const [formValues, setFormValues] = useState({});
-  const [pastValues, setPastValues] = useState({});
+  const [pastValues, setPastValues] = useState([]);
+  const [gpa, setGpa] = useState(0);
+
   const prevFormValues = useRef({});
+  const prevPastValues = useRef([]);
 
   const onBigFormChange = (index, credits, grade, repeated) => {
     const newValues = {
       credits: credits,
       grade: grade,
-      repeated: repeated
+      repeated: repeated,
     };
     setFormValues({ ...formValues, [index]: newValues });
   };
-  const onBottomBarChange = (index, pastGpa, pastCredits) => {
-    const newValues = {
-      pastCredits: pastCredits,
-      pastGpa: pastGpa
-    };
-    setPastValues({ ...pastValues, [index]: newValues });
+
+  const onBottomBarChange = (pastGpa, pastCredits) => {
+    const newValues = [pastCredits, pastGpa];
+    setPastValues(newValues);
   };
 
   const deleteForm = (index) => {
@@ -37,31 +38,31 @@ function App() {
   };
 
   const clearForms = () => {
-    // Erase all forms and reset state
-    // then add a new empty form
     setForms([]);
     setKeyCounter(0);
     setTotalCredits(0);
     setTotalCreditsByWeight(0);
     setFormValues({});
+    setPastValues([]);
+    setGpa(0);
   };
-  
-  useEffect(() => {
-    if (prevFormValues.current === formValues) {
-      return; // skip update
-    }
 
+  useEffect(() => {
+    if (prevFormValues.current === formValues && prevPastValues.current === pastValues) {
+      return;
+    }
+  
     if (forms.length === 0) {
       setForms([0]);
-      setKeyCounter(1)
+      setKeyCounter(1);
     }
-
+  
     const tempCredits = Object.values(formValues).reduce(
       (a, b) => parseInt(a) + parseInt(b.credits),
       0
     );
     setTotalCredits(tempCredits);
-
+  
     const tempCreditsByWeight = Object.values(formValues).reduce(
       (a, b) => {
         if (parseInt(b.credits) === 0) {
@@ -72,19 +73,37 @@ function App() {
       0
     );
     setTotalCreditsByWeight(tempCreditsByWeight);
-
-    prevFormValues.current = formValues;
-  }, [formValues, forms, prevFormValues]);
-
+  }, [formValues, forms, prevFormValues, prevPastValues]);
+  
+  useEffect(() => {
+    if (pastValues.length === 0 && totalCredits === 0) {
+      setGpa(0);
+    } else if (pastValues.length === 0) {
+      const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(3);
+      setGpa(currentGpa);
+    } else if (totalCredits === 0) {
+      setGpa(pastValues[1].toPrecision(3));
+    } else {
+      const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(3);
+      const pastGpa = pastValues[1];
+      const pastCredits = pastValues[0];
+      const weightedAvg = ((pastGpa * pastCredits) + (currentGpa * totalCredits)) / (pastCredits + totalCredits);
+      setGpa(weightedAvg.toPrecision(3));
+    }
+  
+    prevPastValues.current = pastValues;
+  }, [pastValues, totalCredits, totalCreditsByWeight]);
+  
   const addForm = () => {
     setKeyCounter((prev) => prev + 1);
     const newKey = keyCounter;
     setForms([...forms, newKey]);
+  
   };
-
-
-
-
+  
+  
+  
+  
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-indigo-600 text-white">
@@ -120,9 +139,7 @@ function App() {
           ))}
         </div>
       </main>
-      <BottomBar gpa={totalCredits > 0
-              ? Number(totalCreditsByWeight / totalCredits).toPrecision(3)
-              : 0}
+      <BottomBar gpa={gpa}
               onBottomBarChange={onBottomBarChange}/>
     </div>
   );

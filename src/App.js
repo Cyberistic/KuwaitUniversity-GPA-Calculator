@@ -1,6 +1,7 @@
 import "./App.css";
 import { useState, useEffect, useRef } from "react";
 import BigForm from "./BigForm.js";
+import BottomBar from "./BottomBar";
 
 function App() {
   const [forms, setForms] = useState([0]);
@@ -8,6 +9,7 @@ function App() {
   const [totalCredits, setTotalCredits] = useState(0);
   const [totalCreditsByWeight, setTotalCreditsByWeight] = useState(0);
   const [formValues, setFormValues] = useState({});
+  const [pastValues, setPastValues] = useState({});
   const prevFormValues = useRef({});
 
   const onBigFormChange = (index, credits, grade, repeated) => {
@@ -18,12 +20,22 @@ function App() {
     };
     setFormValues({ ...formValues, [index]: newValues });
   };
+  const onBottomBarChange = (index, pastGpa, pastCredits) => {
+    const newValues = {
+      pastCredits: pastCredits,
+      pastGpa: pastGpa
+    };
+    setPastValues({ ...pastValues, [index]: newValues });
+  };
 
   const deleteForm = (index) => {
-    setForms(forms.filter((form) => form !== index));
-    delete formValues[index];
-    setFormValues(formValues);
+    const updatedForms = forms.filter((form) => form !== index);
+    setForms(updatedForms);
+    const updatedFormValues = { ...formValues };
+    delete updatedFormValues[index];
+    setFormValues(updatedFormValues);
   };
+
   const clearForms = () => {
     // Erase all forms and reset state
     // then add a new empty form
@@ -71,16 +83,14 @@ function App() {
   };
 
 
-  
+
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-indigo-600 text-white">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">
-            GPA ={" "}
-            {totalCredits > 0
-              ? Number(totalCreditsByWeight / totalCredits).toPrecision(3)
-              : 0}
+            KU GPA THINGY
           </h1>
           <div className="flex">
             <button
@@ -110,6 +120,10 @@ function App() {
           ))}
         </div>
       </main>
+      <BottomBar gpa={totalCredits > 0
+              ? Number(totalCreditsByWeight / totalCredits).toPrecision(3)
+              : 0}
+              onBottomBarChange={onBottomBarChange}/>
     </div>
   );
 }

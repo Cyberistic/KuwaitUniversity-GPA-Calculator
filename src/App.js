@@ -99,7 +99,7 @@ function App() {
     const tempCredits = Object.values(formValues).reduce((a, b) => {
       const courseCredit = b.repeated === true ? 0 : parseInt(b.credits);
       return parseInt(a) + courseCredit;
-    }, 0);
+    }, pastValues[0]);
     setTotalCredits(tempCredits);
 
     const tempCreditsByWeight = Object.values(formValues).reduce((a, b) => {
@@ -115,33 +115,15 @@ function App() {
         parseInt(b.credits) * parseFloat(b.grade) -
         subtractedCredits
       );
-    }, 0);
+    }, pastValues[0] * pastValues[1]);
     setTotalCreditsByWeight(tempCreditsByWeight);
-  }, [formValues, forms, prevFormValues, prevPastValues]);
+  }, [formValues, forms, prevFormValues, prevPastValues, pastValues]);
 
   useEffect(() => {
-    if (pastValues.length === 0 && totalCredits === 0) {
-      setGpa(0);
-    } else if (pastValues.length === 0) {
-      const currentGpa = Number(
-        totalCreditsByWeight / totalCredits
-      ).toPrecision(3);
-      setGpa(currentGpa);
-    } else if (totalCredits === 0) {
-      setGpa(pastValues[1].toPrecision(3));
-    } else {
-      const currentGpa = Number(
-        totalCreditsByWeight / totalCredits
-      ).toPrecision(3);
-      const pastGpa = pastValues[1];
-      const pastCredits = pastValues[0];
-      const weightedAvg =
-        (pastGpa * pastCredits + currentGpa * totalCredits) /
-        (pastCredits + totalCredits);
-      setGpa(weightedAvg.toPrecision(3));
-    }
-
-    prevPastValues.current = pastValues;
+    const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(
+      3
+    );
+    setGpa(currentGpa);
   }, [pastValues, totalCredits, totalCreditsByWeight]);
 
   const addForm = () => {

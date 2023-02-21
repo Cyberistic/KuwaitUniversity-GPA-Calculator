@@ -163,7 +163,7 @@ function App() {
         </div>
       </header>
       <main className="container mx-auto py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-16 ">
           {forms.map((form) => (
             <BigForm
               key={form}

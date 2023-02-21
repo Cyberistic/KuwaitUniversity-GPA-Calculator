@@ -7,6 +7,7 @@ import Dropzone from "react-dropzone";
 import html2canvas from "html2canvas";
 import downloadjs from "downloadjs";
 
+// preparing for file upload, please ignore
 function getFile(newfile) {
   if (newfile) {
     let parser = new DOMParser().parseFromString(newfile, "text/html");

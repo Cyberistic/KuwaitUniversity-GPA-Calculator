@@ -124,7 +124,15 @@ function App() {
     const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(
       3
     );
+    if (currentGpa > 4){
+      setGpa(4.00);
+    }
+    else if (currentGpa === 'NaN') {
+      setGpa(0.00);
+    }
+    else {
     setGpa(currentGpa);
+    }
   }, [pastValues, totalCredits, totalCreditsByWeight]);
 
   const addForm = () => {

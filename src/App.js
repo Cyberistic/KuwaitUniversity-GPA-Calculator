@@ -1,7 +1,42 @@
 import "./App.css";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import BigForm from "./BigForm.js";
 import BottomBar from "./BottomBar";
+import { stringify } from "querystring";
+import Dropzone from "react-dropzone";
+import html2canvas from "html2canvas";
+import downloadjs from "downloadjs";
+
+function getFile(newfile) {
+  if (newfile) {
+    let parser = new DOMParser().parseFromString(newfile, "text/html");
+    let schedule = parser.getElementsByClassName("c86")[0];
+    let coursename = parser.getElementsByClassName("c18")[0];
+    return [
+      schedule.innerHTML,
+      tableToJSON(coursename.innerHTML)._headers[0][0].split("Term: ")[1]
+    ];
+  } else {
+    return "";
+  }
+}
+
+function tableToJSON(table) {
+  const HtmlTableToJson = require("html-table-to-json");
+  return HtmlTableToJson.parse("<table>" + table + "</table>");
+}
+
+const useFetch = (url) => {
+  const [data, setData] = useState("");
+
+  useEffect(() => {
+    fetch(url)
+      .then((res) => res.text())
+      .then((data) => setData(data));
+  }, [url]);
+
+  return data;
+};
 
 function App() {
   const [forms, setForms] = useState([0]);
@@ -15,11 +50,12 @@ function App() {
   const prevFormValues = useRef({});
   const prevPastValues = useRef([]);
 
-  const onBigFormChange = (index, credits, grade, repeated) => {
+  const onBigFormChange = (index, credits, grade, repeated, pastGrade) => {
     const newValues = {
       credits: credits,
       grade: grade,
       repeated: repeated,
+      pastGrade: pastGrade
     };
     setFormValues({ ...formValues, [index]: newValues });
   };
@@ -48,69 +84,77 @@ function App() {
   };
 
   useEffect(() => {
-    if (prevFormValues.current === formValues && prevPastValues.current === pastValues) {
+    if (
+      prevFormValues.current === formValues &&
+      prevPastValues.current === pastValues
+    ) {
       return;
     }
-  
+
     if (forms.length === 0) {
       setForms([0]);
       setKeyCounter(1);
     }
-  
-    const tempCredits = Object.values(formValues).reduce(
-      (a, b) => parseInt(a) + parseInt(b.credits),
-      0
-    );
+
+    const tempCredits = Object.values(formValues).reduce((a, b) => {
+      const courseCredit = b.repeated === true ? 0 : parseInt(b.credits);
+      return parseInt(a) + courseCredit;
+    }, 0);
     setTotalCredits(tempCredits);
-  
-    const tempCreditsByWeight = Object.values(formValues).reduce(
-      (a, b) => {
-        if (parseInt(b.credits) === 0) {
-          return parseFloat(a);
-        }
-        return parseFloat(a) + parseInt(b.credits) * parseFloat(b.grade);
-      },
-      0
-    );
+
+    const tempCreditsByWeight = Object.values(formValues).reduce((a, b) => {
+      if (parseInt(b.credits) === 0) {
+        return parseFloat(a);
+      }
+
+      const subtractedCredits =
+        b.repeated === true ? parseInt(b.credits) * parseFloat(b.pastGrade) : 0;
+
+      return (
+        parseFloat(a) +
+        parseInt(b.credits) * parseFloat(b.grade) -
+        subtractedCredits
+      );
+    }, 0);
     setTotalCreditsByWeight(tempCreditsByWeight);
   }, [formValues, forms, prevFormValues, prevPastValues]);
-  
+
   useEffect(() => {
     if (pastValues.length === 0 && totalCredits === 0) {
       setGpa(0);
     } else if (pastValues.length === 0) {
-      const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(3);
+      const currentGpa = Number(
+        totalCreditsByWeight / totalCredits
+      ).toPrecision(3);
       setGpa(currentGpa);
     } else if (totalCredits === 0) {
       setGpa(pastValues[1].toPrecision(3));
     } else {
-      const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(3);
+      const currentGpa = Number(
+        totalCreditsByWeight / totalCredits
+      ).toPrecision(3);
       const pastGpa = pastValues[1];
       const pastCredits = pastValues[0];
-      const weightedAvg = ((pastGpa * pastCredits) + (currentGpa * totalCredits)) / (pastCredits + totalCredits);
+      const weightedAvg =
+        (pastGpa * pastCredits + currentGpa * totalCredits) /
+        (pastCredits + totalCredits);
       setGpa(weightedAvg.toPrecision(3));
     }
-  
+
     prevPastValues.current = pastValues;
   }, [pastValues, totalCredits, totalCreditsByWeight]);
-  
+
   const addForm = () => {
     setKeyCounter((prev) => prev + 1);
     const newKey = keyCounter;
     setForms([...forms, newKey]);
-  
   };
-  
-  
-  
-  
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-indigo-600 text-white">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">
-            KU GPA THINGY
-          </h1>
+          <h1 className="text-2xl font-bold">KU GPA THINGY</h1>
           <div className="flex">
             <button
               className="bg-indigo-500 hover:bg-indigo-800 text-white font-medium py-2 px-4 rounded mr-4"
@@ -139,8 +183,7 @@ function App() {
           ))}
         </div>
       </main>
-      <BottomBar gpa={gpa}
-              onBottomBarChange={onBottomBarChange}/>
+      <BottomBar gpa={gpa} onBottomBarChange={onBottomBarChange} />
     </div>
   );
 }

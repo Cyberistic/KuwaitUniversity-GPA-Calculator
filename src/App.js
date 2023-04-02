@@ -126,7 +126,15 @@ function App() {
     const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(
       3
     );
+    if (currentGpa > 4){
+      setGpa(4.00);
+    }
+    else if (currentGpa === 'NaN') {
+      setGpa(0.00);
+    }
+    else {
     setGpa(currentGpa);
+    }
   }, [pastValues, totalCredits, totalCreditsByWeight]);
 
   const addForm = () => {
@@ -157,7 +165,7 @@ function App() {
         </div>
       </header>
       <main className="container mx-auto py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-16 ">
           {forms.map((form) => (
             <BigForm
               key={form}

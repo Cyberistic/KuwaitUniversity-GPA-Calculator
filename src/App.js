@@ -7,6 +7,8 @@ import Dropzone from "react-dropzone";
 import html2canvas from "html2canvas";
 import downloadjs from "downloadjs";
 
+import Select from "react-select";
+
 // preparing for file upload, please ignore
 function getFile(newfile) {
   if (newfile) {

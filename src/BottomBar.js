@@ -1,12 +1,56 @@
 import { useState, useEffect } from "react";
+import Select from "react-select";
+import { read, utils } from "xlsx";
+
+let options = [];
 
 export default function BottomBar(props) {
   const [pastCredits, setPastCredits] = useState(0);
   const [pastGpa, setPastGpa] = useState(0);
 
+  const [students, setStudents] = useState([]);
+  const [curStudent, setCurStudent] = useState(null);
+
+  /* Fetch and update the state once */
+  useEffect(() => {
+    (async () => {
+      const f = await (await fetch("grades.xlsx")).arrayBuffer();
+      const wb = read(f); // parse the array buffer
+      const ws = wb.Sheets[wb.SheetNames[0]]; // get the first worksheet
+      const data = utils.sheet_to_json(ws); // generate objects
+      const studentInfo = data.map((student) => {
+        return {
+          studentID: student.STUDENT_ID,
+          accumulatedCreditsPassed: student.ACCUMULATED_CREDITS_PASSED,
+          accumulatedGPA: student.ACCUMULATED_GPA
+        };
+      });
+      setStudents(studentInfo); // update state
+    })();
+  }, []);
+
+  useEffect(() => {
+    options = students.map((student) => {
+      return {
+        label: student.studentID,
+        value: student.studentID
+      };
+    });
+  }, [students]);
   useEffect(() => {
     props.onBottomBarChange(pastGpa, pastCredits);
   }, [pastGpa, pastCredits]);
+
+  const onStudentChange = (e) => {
+    setCurStudent(e);
+
+    const student = students.find((student) => student.studentID === e.value);
+    if (student) {
+      setPastCredits(student.accumulatedCreditsPassed);
+      setPastGpa(student.accumulatedGPA);
+      console.log(student);
+    }
+  };
 
   const onCreditsChange = (credits) => {
     // Ensure that credits is an integer or an empty string
@@ -49,13 +93,26 @@ export default function BottomBar(props) {
         </div>
         <div className="flex items-center">
           <div className="mr-4">
+            <label className="block font-medium text-gray-700">
+              Student ID
+            </label>
+            <div className="min-w-[200px]">
+              <Select
+                options={options}
+                menuPlacement="top"
+                value={curStudent}
+                onChange={onStudentChange}
+              />
+            </div>
+          </div>
+          <div className="mr-4">
             <label className="block font-medium text-gray-700">Credits</label>
             <input
               type="number"
               className="w-20 py-2 px-3 border border-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               min="0"
               value={pastCredits}
-              onChange={(e) => onCreditsChange(e.target.value)}
+              onChange={onCreditsChange}
             />
           </div>
           <div>

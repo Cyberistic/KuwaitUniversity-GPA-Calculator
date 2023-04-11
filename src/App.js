@@ -8,7 +8,7 @@ import html2canvas from "html2canvas";
 import downloadjs from "downloadjs";
 
 import Select from "react-select";
-
+import { read, utils } from "xlsx";
 // preparing for file upload, please ignore
 function getFile(newfile) {
   if (newfile) {
@@ -53,6 +53,37 @@ function App() {
   const prevFormValues = useRef({});
   const prevPastValues = useRef([]);
 
+  const [students, setStudents] = useState([]);
+
+  /* Fetch and update the state once */
+  useEffect(() => {
+    (async () => {
+      const f = await (await fetch("courses.xlsx")).arrayBuffer();
+      const wb = read(f); // parse the array buffer
+      const ws = wb.Sheets[wb.SheetNames[0]]; // get the first worksheet
+      const data = utils.sheet_to_json(ws); // generate objects
+      const transformedData = {};
+      data.map((student) => {
+        if (!transformedData[student.STUDENT_ID]) {
+          transformedData[student.STUDENT_ID] = {
+            0: {
+              COURSE_CODE: student.COURSE_CODE,
+              COURSE_CREDIT: student.COURSE_CREDIT
+            }
+          };
+        } else {
+          transformedData[student.STUDENT_ID][
+            Object.keys(transformedData[student.STUDENT_ID]).length
+          ] = {
+            COURSE_CODE: student.COURSE_CODE,
+            COURSE_CREDIT: student.COURSE_CREDIT
+          };
+        }
+      });
+      setStudents(transformedData); // update state
+    })();
+  }, []);
+
   const onBigFormChange = (index, credits, grade, repeated, pastGrade) => {
     const newValues = {
       credits: credits,
@@ -63,9 +94,38 @@ function App() {
     setFormValues({ ...formValues, [index]: newValues });
   };
 
-  const onBottomBarChange = (pastGpa, pastCredits) => {
-    const newValues = [pastCredits, pastGpa];
+  const onBottomBarChange = (studentID, pastGpa, pastCredits) => {
+    const newValues = [pastCredits, pastGpa, studentID];
     setPastValues(newValues);
+
+    generateForm();
+  };
+
+  // when student ID is changed, update the form values to match the student's courses and credits
+  const generateForm = () => {
+    const studentID = pastValues[2];
+    if (!students[studentID]) {
+      return;
+    }
+    const studentCourses = students[studentID];
+    const newForms = [];
+    const newFormValues = {};
+    if (studentCourses) {
+      Object.keys(studentCourses).map((key) => {
+        newForms.push(key);
+        newFormValues[key] = {
+          name: studentCourses[key].COURSE_CODE,
+          credits: studentCourses[key].COURSE_CREDIT,
+          grade: 0,
+          repeated: false,
+          pastGrade: 0
+        };
+      });
+    }
+    console.log(newForms);
+    console.log(newFormValues);
+    setForms(newForms);
+    setFormValues(newFormValues);
   };
 
   const deleteForm = (index) => {
@@ -126,14 +186,12 @@ function App() {
     const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(
       3
     );
-    if (currentGpa > 4){
-      setGpa(4.00);
-    }
-    else if (currentGpa === 'NaN') {
-      setGpa(0.00);
-    }
-    else {
-    setGpa(currentGpa);
+    if (currentGpa > 4) {
+      setGpa(4.0);
+    } else if (currentGpa === "NaN") {
+      setGpa(0.0);
+    } else {
+      setGpa(currentGpa);
     }
   }, [pastValues, totalCredits, totalCreditsByWeight]);
 
@@ -168,6 +226,8 @@ function App() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-16 ">
           {forms.map((form) => (
             <BigForm
+              name={formValues[form] ? formValues[form].name : ""}
+              credits={formValues[form] ? formValues[form].credits : ""}
               key={form}
               index={form}
               delete={deleteForm}

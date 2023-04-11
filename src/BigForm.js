@@ -20,7 +20,7 @@ const grades = {
 // This component represents a form for entering class information
 export default function BigForm(props) {
   // Define three pieces of state: credits, whether the class is repeated, and the selected grade
-  const [credits, setCredits] = useState(0);
+  const [credits, setCredits] = useState(props.credits);
   const [repeated, setRepeated] = useState(false);
   const [grade, setGrade] = useState(4);
   const [pastGrade, setPastGrade] = useState(0);
@@ -55,7 +55,7 @@ export default function BigForm(props) {
     <div className="bg-white p-4 rounded shadow-md relative">
       <div className="w-5/6">
         <h2 className="text-xl font-medium mb-4" contenteditable="true">
-          Class {props.index + 1}
+          {props.name ? props.name : "Class " + props.index + 1}
         </h2>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

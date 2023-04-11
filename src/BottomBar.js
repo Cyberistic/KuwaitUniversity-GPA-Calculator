@@ -5,6 +5,7 @@ import { read, utils } from "xlsx";
 let options = [];
 
 export default function BottomBar(props) {
+  const [studentID, setStudentID] = useState("");
   const [pastCredits, setPastCredits] = useState(0);
   const [pastGpa, setPastGpa] = useState(0);
 
@@ -38,16 +39,18 @@ export default function BottomBar(props) {
     });
   }, [students]);
   useEffect(() => {
-    props.onBottomBarChange(pastGpa, pastCredits);
-  }, [pastGpa, pastCredits]);
+    props.onBottomBarChange(studentID, pastGpa, pastCredits);
+  }, [studentID, pastGpa, pastCredits]);
 
   const onStudentChange = (e) => {
     setCurStudent(e);
 
     const student = students.find((student) => student.studentID === e.value);
     if (student) {
+      setStudentID(student.studentID);
       setPastCredits(student.accumulatedCreditsPassed);
       setPastGpa(student.accumulatedGPA);
+
       console.log(student);
     }
   };

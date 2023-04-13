@@ -226,9 +226,9 @@ function App() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-16 ">
           {forms.map((form) => (
             <BigForm
+              key={form}
               name={formValues[form] ? formValues[form].name : ""}
               credits={formValues[form] ? formValues[form].credits : ""}
-              key={form}
               index={form}
               delete={deleteForm}
               onBigFormChange={onBigFormChange}

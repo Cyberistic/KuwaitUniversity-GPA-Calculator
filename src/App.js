@@ -41,6 +41,8 @@ const useFetch = (url) => {
   return data;
 };
 
+const CURTERM = 1868;
+
 function App() {
   const [forms, setForms] = useState([0]);
   const [keyCounter, setKeyCounter] = useState(1);
@@ -64,20 +66,41 @@ function App() {
       const data = utils.sheet_to_json(ws); // generate objects
       const transformedData = {};
       data.map((student) => {
-        if (!transformedData[student.STUDENT_ID]) {
-          transformedData[student.STUDENT_ID] = {
-            0: {
+        if (student.TERM_CODE === CURTERM) {
+          const repeated = data.filter(
+            (s) =>
+              s.STUDENT_ID === student.STUDENT_ID &&
+              s.COURSE_CODE === student.COURSE_CODE &&
+              s.TERM_CODE !== CURTERM &&
+              s.COURSE_GRADE !== "CW"
+          );
+          const pastGrade =
+            repeated.length === 0
+              ? 0
+              : repeated.reduce(
+                  (acc, curr) => (acc.TERMCODE > curr.TERMCODE ? acc : curr),
+                  {}
+                ).COURSE_GRADE;
+
+          if (!transformedData[student.STUDENT_ID]) {
+            transformedData[student.STUDENT_ID] = {
+              0: {
+                COURSE_CODE: student.COURSE_CODE,
+                COURSE_CREDIT: student.COURSE_CREDIT,
+                repeated: repeated.length > 0,
+                pastGrade: repeated ? pastGrade : 0
+              }
+            };
+          } else {
+            transformedData[student.STUDENT_ID][
+              Object.keys(transformedData[student.STUDENT_ID]).length
+            ] = {
               COURSE_CODE: student.COURSE_CODE,
-              COURSE_CREDIT: student.COURSE_CREDIT
-            }
-          };
-        } else {
-          transformedData[student.STUDENT_ID][
-            Object.keys(transformedData[student.STUDENT_ID]).length
-          ] = {
-            COURSE_CODE: student.COURSE_CODE,
-            COURSE_CREDIT: student.COURSE_CREDIT
-          };
+              COURSE_CREDIT: student.COURSE_CREDIT,
+              repeated: repeated.length > 0,
+              pastGrade: repeated ? pastGrade : 0
+            };
+          }
         }
       });
       setStudents(transformedData); // update state
@@ -123,7 +146,7 @@ function App() {
       });
     }
     console.log(newForms);
-    console.log(newFormValues);
+    console.log(students[studentID]);
     setForms(newForms);
     setFormValues(newFormValues);
   };
@@ -229,6 +252,8 @@ function App() {
               key={form}
               name={formValues[form] ? formValues[form].name : ""}
               credits={formValues[form] ? formValues[form].credits : ""}
+              repeated={formValues[form] ? formValues[form].repeated : false}
+              pastGrade={formValues[form] ? formValues[form].pastGrade : 0}
               index={form}
               delete={deleteForm}
               onBigFormChange={onBigFormChange}

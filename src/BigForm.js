@@ -21,9 +21,9 @@ const grades = {
 export default function BigForm(props) {
   // Define three pieces of state: credits, whether the class is repeated, and the selected grade
   const [credits, setCredits] = useState(props.credits);
-  const [repeated, setRepeated] = useState(false);
+  const [repeated, setRepeated] = useState(props.repeated);
   const [grade, setGrade] = useState(4);
-  const [pastGrade, setPastGrade] = useState(0);
+  const [pastGrade, setPastGrade] = useState(props.pastGrade);
 
   // This function handles changes to the credits input field
   const onCreditsChange = (credits) => {

@@ -115,7 +115,7 @@ export default function BottomBar(props) {
               className="w-20 py-2 px-3 border border-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               min="0"
               value={pastCredits}
-              onChange={onCreditsChange}
+              onChange={(e) => onCreditsChange(e.target.value)}
             />
           </div>
           <div>

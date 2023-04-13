@@ -14,7 +14,8 @@ const grades = {
   "C-": 1.67,
   "D+": 1.33,
   D: 1,
-  F: 0
+  F: 0,
+  FA: 0
 };
 
 // This component represents a form for entering class information
@@ -23,7 +24,7 @@ export default function BigForm(props) {
   const [credits, setCredits] = useState(props.credits);
   const [repeated, setRepeated] = useState(props.repeated);
   const [grade, setGrade] = useState(4);
-  const [pastGrade, setPastGrade] = useState(props.pastGrade);
+  const [pastGrade, setPastGrade] = useState(grades[props.pastGrade]);
 
   // This function handles changes to the credits input field
   const onCreditsChange = (credits) => {
@@ -47,14 +48,21 @@ export default function BigForm(props) {
 
   // This effect runs every time credits, grade, or repeated changes, and updates the parent component's state
   useEffect(() => {
-    props.onBigFormChange(props.index, credits, grade, repeated, pastGrade);
+    props.onBigFormChange(
+      props.index,
+      credits,
+      grade,
+      repeated,
+      pastGrade,
+      props.name ? props.name : "Class " + props.index + 1
+    );
   }, [credits, grade, repeated, pastGrade]);
 
   // Render the form
   return (
     <div className="bg-white p-4 rounded shadow-md relative">
       <div className="w-5/6">
-        <h2 className="text-xl font-medium mb-4" contenteditable="true">
+        <h2 className="text-xl font-medium mb-4">
           {props.name ? props.name : "Class " + props.index + 1}
         </h2>
       </div>
@@ -82,10 +90,10 @@ export default function BigForm(props) {
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex justify-center items-center ">
           <input
+            defaultChecked={repeated}
             onChange={(e) => setRepeated(e.target.checked)}
             id="default-checkbox"
             type="checkbox"
-            value={repeated}
             className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
           />
           <div>

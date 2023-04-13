@@ -143,7 +143,7 @@ function App() {
     } else {
       setGpa(currentGpa);
     }
-  }, [pastValues, totalCredits, totalCreditsByWeight]);
+  }, [totalCredits, totalCreditsByWeight]);
 
   const onBigFormChange = (
     index,
@@ -165,12 +165,11 @@ function App() {
 
   const onBottomBarChange = (studentID, pastGpa, pastCredits) => {
     const newValues = [pastCredits, pastGpa, studentID];
+    if (pastValues[2] !== newValues[2]) {
+      generateForm();
+    }
     setPastValues(newValues);
   };
-
-  useEffect(() => {
-    generateForm();
-  }, [pastValues]);
 
   // when student ID is changed, update the form values to match the student's courses and credits
   const generateForm = () => {
@@ -192,7 +191,6 @@ function App() {
         };
       });
     }
-    clearForms();
     setForms(newFormValues);
     console.log(newFormValues);
   };

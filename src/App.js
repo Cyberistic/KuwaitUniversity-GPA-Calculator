@@ -136,7 +136,9 @@ function App() {
     const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(
       3
     );
-    if (currentGpa > 4) {
+    if (totalCredits === 0) {
+      setGpa(0.0);
+    } else if (currentGpa > 4) {
       setGpa(4.0);
     } else if (currentGpa === "NaN") {
       setGpa(0.0);
@@ -144,6 +146,7 @@ function App() {
       setGpa(currentGpa);
     }
   }, [totalCredits, totalCreditsByWeight]);
+  
 
   const onBigFormChange = (
     index,
@@ -166,19 +169,18 @@ function App() {
   const onBottomBarChange = (studentID, pastGpa, pastCredits) => {
     const newValues = [pastCredits, pastGpa, studentID];
     if (pastValues[2] !== newValues[2]) {
-      generateForm();
+      generateForm(newValues);
     }
     setPastValues(newValues);
   };
-
   // when student ID is changed, update the form values to match the student's courses and credits
-  const generateForm = () => {
-    const studentID = pastValues[2];
+  const generateForm = (newValues) => {
+    const studentID = newValues[2];
     if (!students[studentID]) {
       return;
     }
     const studentCourses = students[studentID];
-
+  
     const newFormValues = {};
     if (studentCourses) {
       Object.keys(studentCourses).map((key) => {

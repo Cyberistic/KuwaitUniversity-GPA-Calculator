@@ -155,7 +155,6 @@ function App() {
       return { ...curforms, [index]: newValues };
     });
   };
-
   // when student ID is changed, update the form values to match the student's courses and credits
   const generateForm = () => {
     const studentID = pastValues[0];

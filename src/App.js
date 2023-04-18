@@ -62,6 +62,7 @@ function App() {
     })();
   });
 
+
   // Calculate the total credits by adding up all the credits from the forms
   const totalCredits = Object.values(forms).reduce((a, b) => {
     const courseCredit = b.repeated === true ? 0 : parseInt(b.credits);
@@ -180,6 +181,7 @@ function App() {
         }),
         {}
       );
+      
 
       setForms(newFormValues);
     }
@@ -189,7 +191,7 @@ function App() {
   useEffect(() => {
     if (!pastValues[0]) return;
     generateForm();
-    console.log("hi");
+
   }, [pastValues[0]]);
 
   // Init the form with one empty form
@@ -200,7 +202,7 @@ function App() {
   // Map the forms object to an array of BigForm components
   const formEnteries = Object.entries(forms).map(([key, value]) => (
     <BigForm
-      key={key}
+      key={key+value.name}
       name={value.name ? value.name : ""}
       credits={value.credits ? value.credits : 0}
       repeated={value.repeated ? value.repeated : false}

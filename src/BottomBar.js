@@ -1,17 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Select from "react-select";
 import { read, utils } from "xlsx";
 
-let options = [];
-
 export default function BottomBar(props) {
-  const [studentID, setStudentID] = useState("");
-  const [pastCredits, setPastCredits] = useState(0);
-  const [pastGpa, setPastGpa] = useState(0);
-
-  const [students, setStudents] = useState([]);
   const [curStudent, setCurStudent] = useState(null);
-
+  const [[studentID, pastGpa, pastCredits], setPastValues] = useState([
+    "",
+    0,
+    0
+  ]);
+  const [students, setStudents] = useState(null);
   /* Fetch and update the state once */
   useEffect(() => {
     (async () => {
@@ -22,24 +20,25 @@ export default function BottomBar(props) {
       const studentInfo = data.map((student) => {
         return {
           studentID: student.STUDENT_ID,
-          accumulatedCreditsPassed: student.ACCUMULATED_CREDITS_PASSED,
-          accumulatedGPA: student.ACCUMULATED_GPA
+          accumulatedCreditsPassed: Number(student.ACCUMULATED_CREDITS_PASSED),
+          accumulatedGPA: Number(student.ACCUMULATED_GPA)
         };
       });
-      setStudents(studentInfo); // update state
+      setStudents(studentInfo);
     })();
   }, []);
 
+  const options = students
+    ? students.map((student) => {
+        return {
+          label: student.studentID,
+          value: student.studentID
+        };
+      })
+    : [];
+
   useEffect(() => {
-    options = students.map((student) => {
-      return {
-        label: student.studentID,
-        value: student.studentID
-      };
-    });
-  }, [students]);
-  useEffect(() => {
-    props.onBottomBarChange(studentID, pastGpa, pastCredits);
+    props.setPastValues([studentID, pastGpa, pastCredits]);
   }, [studentID, pastGpa, pastCredits]);
 
   const onStudentChange = (e) => {
@@ -47,10 +46,12 @@ export default function BottomBar(props) {
 
     const student = students.find((student) => student.studentID === e.value);
     if (student) {
-      setStudentID(student.studentID);
-      setPastCredits(student.accumulatedCreditsPassed);
-      setPastGpa(student.accumulatedGPA);
-
+      setPastValues([
+        student.studentID,
+        student.accumulatedGPA,
+        student.accumulatedCreditsPassed
+      ]);
+      props.generateForm();
       console.log(student);
     }
   };
@@ -60,15 +61,15 @@ export default function BottomBar(props) {
     if (Number.isInteger(parseInt(credits)) || credits === "") {
       // Clamp credits between 0 and 9
       if (credits > 200) {
-        setPastCredits(200);
+        setPastValues([studentID, pastGpa, 200]);
       } else if (credits < 0) {
-        setPastCredits(0);
+        setPastValues([studentID, pastGpa, 0]);
       } else {
         // If credits is a float, round down to the nearest integer
         if (credits % 1 !== 0) {
-          setPastCredits(Math.floor(credits));
+          setPastValues([studentID, pastGpa, Math.floor(credits)]);
         } else {
-          setPastCredits(parseInt(credits));
+          setPastValues([studentID, pastGpa, parseInt(credits)]);
         }
       }
     }
@@ -79,11 +80,11 @@ export default function BottomBar(props) {
     if (Number.isInteger(parseInt(gpa)) || gpa === "") {
       // Clamp credits between 0 and 9
       if (gpa > 4) {
-        setPastGpa(4);
+        setPastValues([studentID, 4.0, pastCredits]);
       } else if (gpa < 0) {
-        setPastGpa(0);
+        setPastValues([studentID, 0.0, pastCredits]);
       } else {
-        setPastGpa(parseFloat(gpa));
+        setPastValues([studentID, parseFloat(gpa), pastCredits]);
       }
     }
   };
@@ -91,9 +92,7 @@ export default function BottomBar(props) {
   return (
     <div className="fixed bottom-0 left-0 w-full bg-gray-200 py-2 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto flex justify-between items-center">
-        <div className="text-lg font-medium">
-          GPA: <span className="font-bold">{props.gpa}</span>
-        </div>
+        <div className="text-lg font-medium">GPA: {props.gpa}</div>
         <div className="flex items-center">
           <div className="mr-4">
             <label className="block font-medium text-gray-700">

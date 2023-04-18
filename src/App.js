@@ -1,64 +1,18 @@
 import "./App.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import BigForm from "./BigForm.js";
 import BottomBar from "./BottomBar";
-// import { stringify } from "querystring";
-// import Dropzone from "react-dropzone";
-// import html2canvas from "html2canvas";
-// import downloadjs from "downloadjs";
-
-// import Select from "react-select";
 import { read, utils } from "xlsx";
-// preparing for file upload, please ignore
-// function getFile(newfile) {
-//   if (newfile) {
-//     let parser = new DOMParser().parseFromString(newfile, "text/html");
-//     let schedule = parser.getElementsByClassName("c86")[0];
-//     let coursename = parser.getElementsByClassName("c18")[0];
-//     return [
-//       schedule.innerHTML,
-//       tableToJSON(coursename.innerHTML)._headers[0][0].split("Term: ")[1]
-//     ];
-//   } else {
-//     return "";
-//   }
-// }
-
-// function tableToJSON(table) {
-//   const HtmlTableToJson = require("html-table-to-json");
-//   return HtmlTableToJson.parse("<table>" + table + "</table>");
-// }
-
-// const useFetch = (url) => {
-//   const [data, setData] = useState("");
-
-//   useEffect(() => {
-//     fetch(url)
-//       .then((res) => res.text())
-//       .then((data) => setData(data));
-//   }, [url]);
-
-//   return data;
-// };
 
 const CURTERM = 1868;
 
 function App() {
   const [forms, setForms] = useState({});
-
-  const [totalCredits, setTotalCredits] = useState(0);
-  const [totalCreditsByWeight, setTotalCreditsByWeight] = useState(0);
-
   const [pastValues, setPastValues] = useState([]);
-  const [gpa, setGpa] = useState(0);
 
-  const [students, setStudents] = useState([]);
-
-  /* Fetch and update the state once */
+  const [students, setStudents] = useState(null);
+  // Init student data from excel file
   useEffect(() => {
-    if (Object.keys(forms).length === 0) {
-      addForm();
-    }
     (async () => {
       const f = await (await fetch("courses.xlsx")).arrayBuffer();
       const wb = read(f); // parse the array buffer
@@ -104,47 +58,84 @@ function App() {
           }
         }
       });
-      setStudents(transformedData); // update state
+      setStudents(transformedData);
     })();
-  }, []);
+  });
 
-  useEffect(() => {
-    const tempCredits = Object.values(forms).reduce((a, b) => {
-      const courseCredit = b.repeated === true ? 0 : parseInt(b.credits);
-      return parseInt(a) + courseCredit;
-    }, pastValues[0]);
-    setTotalCredits(tempCredits);
+  // Calculate the total credits by adding up all the credits from the forms
+  const totalCredits = Object.values(forms).reduce((a, b) => {
+    const courseCredit = b.repeated === true ? 0 : parseInt(b.credits);
+    return parseInt(a) + courseCredit;
+  }, pastValues[2]);
 
-    const tempCreditsByWeight = Object.values(forms).reduce((a, b) => {
-      if (parseInt(b.credits) === 0) {
-        return parseFloat(a);
-      }
-
-      const subtractedCredits =
-        b.repeated === true ? parseInt(b.credits) * parseFloat(b.pastGrade) : 0;
-
-      return (
-        parseFloat(a) +
-        parseInt(b.credits) * parseFloat(b.grade) -
-        subtractedCredits
-      );
-    }, pastValues[0] * pastValues[1]);
-    setTotalCreditsByWeight(tempCreditsByWeight);
-  }, [forms, pastValues]);
-
-  useEffect(() => {
-    const currentGpa = Number(totalCreditsByWeight / totalCredits).toPrecision(
-      3
-    );
-    if (currentGpa > 4) {
-      setGpa(4.0);
-    } else if (currentGpa === "NaN") {
-      setGpa(0.0);
-    } else {
-      setGpa(currentGpa);
+  // Calculate the total credits by weight by adding up all the credits from the forms multiplied by the grade
+  const totalCreditsByWeight = Object.values(forms).reduce((a, b) => {
+    if (parseInt(b.credits) === 0) {
+      return parseFloat(a);
     }
-  }, [totalCredits, totalCreditsByWeight]);
 
+    const subtractedCredits =
+      b.repeated === true ? parseInt(b.credits) * parseFloat(b.pastGrade) : 0;
+
+    // log before return
+    const computed =
+      parseFloat(a) +
+      parseInt(b.credits) * parseFloat(b.grade) -
+      subtractedCredits;
+    // check if computed is NaN or undefined
+    if (isNaN(computed) || computed === undefined) {
+      return 0.0;
+    }
+    return computed;
+  }, pastValues[1] * pastValues[2]);
+
+  // Calculate the gpa by dividing the total credits by weight by the total credits
+
+  // gpa in 1 line
+  const [gpa, setGPA] = useState(0.0);
+  useEffect(() => {
+    console.log(forms);
+    if (totalCreditsByWeight === 0.0) {
+      setGPA(0.0);
+      return;
+    }
+    const gpaValue = totalCreditsByWeight / totalCredits;
+    if (isNaN(gpaValue)) {
+      setGPA(0.0);
+    }
+    const roundedGpaValue = Math.min(gpaValue, 4.0).toPrecision(3);
+
+    setGPA(roundedGpaValue);
+  }, [totalCreditsByWeight]);
+
+  // Add a new form to the forms object
+  const addForm = (name, credits, grade, repeated, pastGrade) => {
+    const tempForm = {
+      name: name ? name : "",
+      credits: credits ? credits : 4,
+      grade: grade ? grade : "A",
+      repeated: repeated ? repeated : false,
+      pastGrade: pastGrade ? pastGrade : "A"
+    };
+    setForms((forms) => ({
+      ...forms,
+      [Object.keys(forms).length]: { tempForm }
+    }));
+  };
+
+  // Delete a form from the forms object
+  const deleteForm = (index) => {
+    const tempForms = { ...forms };
+    delete tempForms[index];
+    setForms(tempForms);
+  };
+
+  // Clear all the forms
+  const clearForms = () => {
+    setForms({});
+  };
+
+  // When a form is changed, update the forms object
   const onBigFormChange = (
     index,
     credits,
@@ -160,65 +151,59 @@ function App() {
       pastGrade: pastGrade,
       name: name
     };
-    setForms({ ...forms, [index]: newValues });
-  };
-
-  const onBottomBarChange = (studentID, pastGpa, pastCredits) => {
-    const newValues = [pastCredits, pastGpa, studentID];
-    if (pastValues[2] !== newValues[2]) {
-      generateForm();
-    }
-    setPastValues(newValues);
+    setForms((curforms) => {
+      return { ...curforms, [index]: newValues };
+    });
   };
 
   // when student ID is changed, update the form values to match the student's courses and credits
   const generateForm = () => {
-    const studentID = pastValues[2];
-    if (!students[studentID]) {
+    const studentID = pastValues[0];
+
+    if (!students[studentID] || !students) {
+      console.log("no student found");
+      console.log(students[studentID]);
       return;
     }
     const studentCourses = students[studentID];
 
-    const newFormValues = {};
     if (studentCourses) {
-      Object.keys(studentCourses).map((key) => {
-        newFormValues[key] = {
-          name: studentCourses[key].COURSE_CODE,
-          credits: studentCourses[key].COURSE_CREDIT,
-          grade: 0,
-          repeated: studentCourses[key].repeated,
-          pastGrade: studentCourses[key].pastGrade
-        };
-      });
+      const newFormValues = Object.entries(studentCourses).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: {
+            name: value.COURSE_CODE,
+            credits: value.COURSE_CREDIT,
+            grade: 0,
+            repeated: value.repeated,
+            pastGrade: value.pastGrade || "A"
+          }
+        }),
+        {}
+      );
+
+      setForms(newFormValues);
     }
-    setForms(newFormValues);
-    console.log(newFormValues);
   };
 
-  const deleteForm = (index) => {
-    const tempForms = { ...forms };
-    delete tempForms[index];
-    setForms(tempForms);
-  };
+  // Init the form with one empty form
+  if (Object.keys(forms).length === 0) {
+    addForm();
+  }
 
-  const clearForms = () => {
-    setForms({});
-    setTotalCredits(0);
-    setTotalCreditsByWeight(0);
-    setGpa(0);
-  };
-
-  const addForm = (name, credits, grade, repeated, pastGrade) => {
-    const tempForm = {
-      name: name ? name : "",
-      credits: credits ? credits : 0,
-      grade: grade ? grade : 0,
-      repeated: repeated ? repeated : false,
-      pastGrade: pastGrade ? pastGrade : 0
-    };
-    setForms({ ...forms, [Object.keys(forms).length]: { tempForm } });
-    console.log(forms);
-  };
+  // Map the forms object to an array of BigForm components
+  const formEnteries = Object.entries(forms).map(([key, value]) => (
+    <BigForm
+      key={key}
+      name={value.name ? value.name : ""}
+      credits={value.credits ? value.credits : 0}
+      repeated={value.repeated ? value.repeated : false}
+      pastGrade={value.pastGrade ? value.pastGrade : "A"}
+      index={key}
+      delete={deleteForm}
+      onBigFormChange={onBigFormChange}
+    />
+  ));
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -243,21 +228,14 @@ function App() {
       </header>
       <main className="container mx-auto py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-16 ">
-          {Object.entries(forms).map(([key, value]) => (
-            <BigForm
-              key={key}
-              name={value.name ? value.name : ""}
-              credits={value.credits ? value.credits : 0}
-              repeated={value.repeated ? value.repeated : false}
-              pastGrade={value.pastGrade ? value.pastGrade : 0}
-              index={key}
-              delete={deleteForm}
-              onBigFormChange={onBigFormChange}
-            />
-          ))}
+          {formEnteries}
         </div>
       </main>
-      <BottomBar gpa={gpa} onBottomBarChange={onBottomBarChange} />
+      <BottomBar
+        gpa={gpa}
+        setPastValues={setPastValues}
+        generateForm={generateForm}
+      />
     </div>
   );
 }

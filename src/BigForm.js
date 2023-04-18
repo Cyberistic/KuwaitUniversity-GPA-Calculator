@@ -133,7 +133,7 @@ function Grade(props) {
       <select
         className="border border-gray-300 p-2 rounded w-full"
         value={props.grade}
-        onChange={(e) => props.setGrade(e.target.value)}
+        onChange={(e) => props.setGrade(parseFloat(e.target.value))}
       >
         {/* Map over the grades object and create an option for each key/value pair */}
         {Object.keys(grades).map((key) => (

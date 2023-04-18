@@ -159,7 +159,7 @@ function App() {
   const generateForm = () => {
     const studentID = pastValues[0];
 
-    if (!students[studentID] || !students) {
+    if (!students[studentID] || !students || !studentID) {
       console.log("no student found");
       console.log(students[studentID]);
       return;
@@ -184,6 +184,13 @@ function App() {
       setForms(newFormValues);
     }
   };
+
+  // When the student ID is changed, generate the forms
+  useEffect(() => {
+    if (!pastValues[0]) return;
+    generateForm();
+    console.log("hi");
+  }, [pastValues[0]]);
 
   // Init the form with one empty form
   if (Object.keys(forms).length === 0) {
@@ -230,11 +237,7 @@ function App() {
           {formEnteries}
         </div>
       </main>
-      <BottomBar
-        gpa={gpa}
-        setPastValues={setPastValues}
-        generateForm={generateForm}
-      />
+      <BottomBar gpa={gpa} setPastValues={setPastValues} />
     </div>
   );
 }

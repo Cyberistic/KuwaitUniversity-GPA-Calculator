@@ -51,7 +51,7 @@ export default function BottomBar(props) {
         student.accumulatedGPA,
         student.accumulatedCreditsPassed
       ]);
-      props.generateForm();
+
       console.log(student);
     }
   };
